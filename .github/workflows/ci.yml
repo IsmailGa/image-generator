@@ -5,38 +5,39 @@ on:
     branches: [main]
   pull_request:
 
-  jobs:
-    test:
-      runs-on: ubuntu-latest
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-      servies:
-        db:
-          image: postgres:17
-          env:
-            POSTGRES_USER: app
-            POSTGRES_PASSWORD: app
-            POSTGRES_USER: image_test
-          options: >-
-            --health-cmd "pg_isready -U app -d image_test"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-          ports:
-            - 5432:5432
+    services:
+      db:
+        image: postgres:17          # поставь ту же версию, что в docker-compose.yml
         env:
-          SECRET_KEY: ci-only-secret-not-used-anywhere-else
-          DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/images_test
-          TEST_DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/images_test
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: images_test
+        options: >-
+          --health-cmd "pg_isready -U app -d images_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
-        steps:
-          - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    env:
+      SECRET_KEY: ci-only-secret-not-used-anywhere-else
+      DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/images_test
+      TEST_DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/images_test
 
-          - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
-            with:
-              enable-cache: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-          - run: uv python install
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
 
-          - run: uv sync --locked
+      - run: uv python install
 
-          - run: uv run pytest
+      - run: uv sync --locked
+
+      - run: uv run pytest
